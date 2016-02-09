@@ -1,4 +1,4 @@
-#! /usr/local/bin/expect --
+#!/usr/bin/env expect
 ##
 ## $Id: clogin.in 2210 2010-06-25 19:41:21Z root $
 ##

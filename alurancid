@@ -1,4 +1,4 @@
-#! /usr/bin/perl5
+#!/usr/bin/env perl
 ##
 ## $Id: rancid.in 2211 2010-07-07 23:15:10Z heas $
 ##
@@ -79,8 +79,7 @@ my($filter_pwds);			# password filtering mode
 # This routine is used to print out the router configuration
 sub ProcessHistory {
     my($new_hist_tag,$new_command,$command_string,@string) = (@_);
-    if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
-	&& defined %history) {
+    if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command)) && %history) {
 	print eval "$command \%history";
 	undef %history;
     }
