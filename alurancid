@@ -225,6 +225,28 @@ sub ShowSysinfo {
     return(0);
 }
 
+# This routine parses "show mda"
+# This routine parses "show card"
+sub ShowPhy {
+    print STDERR "    In ShowPhy: $_" if ($debug);
+
+    while (<INPUT>) {
+        tr/\015//d;
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^$/); # drop empty lines
+        return(1) if /Line has invalid autocommand /;
+        return(1) if /(Invalid input detected|Type help or )/;
+        if (/^$prompt/) {
+                ProcessHistory("","","","!$_");
+                $found_end++;
+                last;
+        }
+        # catch all output
+        ProcessHistory("","","","$_");
+    }
+    return(0);
+}
+
 # This routine parses "show chassis envronment"
 sub ShowHw {
     print STDERR "    In ShowHw: $_" if ($debug);
@@ -298,6 +320,8 @@ sub DoNothing {print STDOUT;}
        {'admin display-config'                 => 'ShowConfig'},
        {'show system information'              => 'ShowSysinfo'},
        {'show redundancy synchronization'      => 'ShowRedSync'},
+       {'show card'                            => 'ShowPhy'},
+       {'show mda'                             => 'ShowPhy'},
 );
 
 # Use an array to preserve the order of the commands and a hash for mapping
