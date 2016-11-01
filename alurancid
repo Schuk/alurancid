@@ -191,7 +191,7 @@ sub ShowConfig {
         next if (/^# (Generated|Finished)/);
         next if (/^$/); # drop empty lines
         return(1) if /Line has invalid autocommand /;
-        return(1) if /(Invalid input detected|Type help or )/;
+        return(1) if /(Invalid input detected|Error: Invalid parameter|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
                 $found_end++;
@@ -212,6 +212,7 @@ sub ShowSysinfo {
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
         next if (/System Up Time/);
+        next if (/Time Last Saved/);
         return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
@@ -225,8 +226,7 @@ sub ShowSysinfo {
     return(0);
 }
 
-# This routine parses "show mda"
-# This routine parses "show card"
+# This routine parses "show {card,mda,sfm} detail"
 sub ShowPhy {
     print STDERR "    In ShowPhy: $_" if ($debug);
 
@@ -234,8 +234,10 @@ sub ShowPhy {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
+        next if (/^Config file/); # drop lines with config times
+        next if (/^(\s+(?:Current|Temperature)\s*:)/);
         return(1) if /Line has invalid autocommand /;
-        return(1) if /(Invalid input detected|Type help or )/;
+        return(1) if /(Invalid input detected|Error: Invalid parameter|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
                 $found_end++;
@@ -255,6 +257,7 @@ sub ShowHw {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
+        next if (/^(\s+(?:Current|Temperature)\s*:)/);
         return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
@@ -297,6 +300,7 @@ sub ShowRedSync {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
+        next if (/Sync Time/); # drop empty lines with times
         return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
@@ -320,8 +324,9 @@ sub DoNothing {print STDOUT;}
        {'admin display-config'                 => 'ShowConfig'},
        {'show system information'              => 'ShowSysinfo'},
        {'show redundancy synchronization'      => 'ShowRedSync'},
-       {'show card'                            => 'ShowPhy'},
-       {'show mda'                             => 'ShowPhy'},
+       {'show card detail'                     => 'ShowPhy'},
+       {'show mda detail'                      => 'ShowPhy'},
+       {'show sfm detail'                      => 'ShowPhy'},
 );
 
 # Use an array to preserve the order of the commands and a hash for mapping
@@ -389,8 +394,14 @@ ProcessHistory("COMMENTS","keysort","G0","!\n");
 TOP: while(<INPUT>) {
     tr/\015//d;
     if (/Connection to [^ ]+ closed\.$/) {
+	$clean_run = 1;
+	print STDOUT ("$host : $_");
+	print STDERR ("$host : $_") if ($debug);
+	last;
     } elsif (/Connection closed by foreign host\.$/) {
 	$clean_run = 1;
+	print STDOUT ("$host : $_");
+	print STDERR ("$host : $_") if ($debug);
 	last;
     }
     if (/^Error:/) {
@@ -416,11 +427,13 @@ TOP: while(<INPUT>) {
 	delete($commands{$cmd});
 	if ($rval == -1) {
 	    $clean_run = 0;
+	    print STDERR "Waiting for prompt: $cmd\n" if ($debug);
 	    last TOP;
 	}
     }
 }
 print STDOUT "Done $logincmd: $_\n" if ($log);
+print STDERR "Done $logincmd: $_\n" if ($debug);
 # Flush History
 ProcessHistory("","","","");
 # Cleanup
